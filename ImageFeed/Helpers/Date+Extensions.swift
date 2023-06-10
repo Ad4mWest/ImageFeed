@@ -8,6 +8,7 @@ private var dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateStyle = .long
     formatter.timeStyle = .none
+    formatter.dateFormat = "dd MMM yyyy"
     return formatter
 }()
 
