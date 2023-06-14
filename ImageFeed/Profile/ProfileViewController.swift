@@ -2,7 +2,6 @@
 //  ImageFeed
 //  Created by Adam West on 08.06.23.
 
-
 import UIKit
 
 final class ProfileViewController: UIViewController {
@@ -12,7 +11,6 @@ final class ProfileViewController: UIViewController {
         let image = UIImage(named: "avatar")
         imageView.image = image
         imageView.tintColor = .gray
-        
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -24,7 +22,6 @@ final class ProfileViewController: UIViewController {
             action: #selector(didTapButton))
         button.tintColor = .ypRed
         button.tag = 1
-        
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -45,7 +42,6 @@ final class ProfileViewController: UIViewController {
         label.textColor = .ypGray
         label.font = UIFont.systemFont(ofSize: 13)
         label.numberOfLines = 1
-        
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -56,7 +52,6 @@ final class ProfileViewController: UIViewController {
         label.textColor = .ypWhite
         label.font = UIFont.systemFont(ofSize: 13)
         label.numberOfLines = 1
-        
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -64,7 +59,6 @@ final class ProfileViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .ypBlack
-        
         addToSubview(views: [avatarImageView, nameLabel, loginNameLabel, descriptionLabel, logoutButton])
         addConstraints(constants: [imageViewConstraints, nameLabelConstraints, loginNameLabelConstraints, descriptionLabelConstraints, logoutButtonConstraints])
     }
