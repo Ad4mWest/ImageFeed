@@ -26,11 +26,7 @@ class WebViewViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        webView.addObserver(
-            self,
-            forKeyPath: #keyPath(WKWebView.estimatedProgress),
-            options: .new,
-            context: nil)
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
         updateProgress()
     }
     
@@ -63,12 +59,12 @@ class WebViewViewController: UIViewController {
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "scope", value: AccessScope)
         ]
-        guard let url = urlComponents.url
-        else {
-            fatalError("Failed URL \(urlComponents)")
+        if let url = urlComponents.url {
+            let request = URLRequest(url: url)
+            webView.load(request)
+        } else {
+            fatalError("Failed to make URL from \(urlComponents)")
         }
-        let request = URLRequest(url: url)
-        webView.load(request)
     }
     
     @IBAction private func didTapBackButton(_ sender: Any?) {
@@ -76,14 +72,10 @@ class WebViewViewController: UIViewController {
     }
 }
 
-//MARK: - WebViewViewControllerDelegate
+//MARK: - WKNavigationDelegate
 
 extension WebViewViewController: WKNavigationDelegate {
-    func webView(
-        _ webView: WKWebView,
-        decidePolicyFor navigationAction: WKNavigationAction,
-        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
-    ) {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if let code = code(from: navigationAction) {
             delegate?.webViewViewController(self, didAuthenticateWithCode: code)
             decisionHandler(.cancel)
@@ -92,9 +84,8 @@ extension WebViewViewController: WKNavigationDelegate {
         }
     }
     
-    private func code(from navigationAction: WKNavigationAction) -> String? {
-        if
-            let url = navigationAction.request.url,
+    func code(from navigationAction: WKNavigationAction) -> String? {
+        if  let url = navigationAction.request.url,
             let urlComponents = URLComponents(string: url.absoluteString),
             urlComponents.path == "/oauth/authorize/native",
             let items = urlComponents.queryItems,

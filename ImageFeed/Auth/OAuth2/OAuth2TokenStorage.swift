@@ -4,9 +4,9 @@
 
 import Foundation
 
-final class OAuth2TokenStorage {
-    static let shared = OAuth2TokenStorage()
-    let userDefaults = UserDefaults.standard
+struct OAuth2TokenStorage {
+    static var shared = OAuth2TokenStorage()
+    private let userDefaults = UserDefaults.standard
     private enum Keys: String {
         case tokenKey
     }
