@@ -4,45 +4,57 @@
 
 import Foundation
 
-fileprivate let AccessTokenURL = "https://unsplash.com/oauth/token"
-
 final class OAuth2Service {
-   
-    enum NetworkError: Error {
+    private enum NetworkError: Error {
+        case urlComponentsError
+        case creationURLFromComponents
         case httpStatusCode(Int)
         case urlRequestError(Error)
         case urlSessionError(Error)
+        case accessTokenError
+    }
+    private struct OAuthTokenResponseBody: Decodable {
+        let accessToken: String
+        let tokenType: String
+        let scope: String
+        let createdAt: Int
     }
     
     func fetchOAuthTokenFrom(code: String, completion: @escaping (Result<String, Error>) -> Void) {
         
-        guard var urlComponents = URLComponents(string: AccessTokenURL) else {
-            fatalError("Failed to make urlComponents from \(AccessTokenURL)")
+        guard var urlComponents = URLComponents(string: AuthConstants.accessTokenURL) else {
+            completion(.failure(NetworkError.urlComponentsError))
+            return
         }
         urlComponents.queryItems = [
-            URLQueryItem(name: "client_id", value: AccessKey),
-            URLQueryItem(name: "client_secret", value: SecretKey),
-            URLQueryItem(name: "redirect_uri", value: RedirectURI),
+            URLQueryItem(name: "client_id", value: AuthConstants.accessKey),
+            URLQueryItem(name: "client_secret", value: AuthConstants.secretKey),
+            URLQueryItem(name: "redirect_uri", value: AuthConstants.redirectURI),
             URLQueryItem(name: "code", value: code),
             URLQueryItem(name: "grant_type", value: "authorization_code")
         ]
-        
         guard let url = urlComponents.url else {
-            fatalError("Failed to make URL from \(urlComponents)")
+            completion(.failure(NetworkError.creationURLFromComponents))
+            return
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(NetworkError.urlSessionError(error)))
+        let session = URLSession.shared
+        let task = session.dataTask(with: request) { data, response, error in
+            if let data = data {
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let responseBody = try decoder.decode(OAuthTokenResponseBody.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(.success(responseBody.accessToken))
+                    }
+                } catch {
+                        completion(.failure(NetworkError.accessTokenError))
                 }
-                return
             }
-            
             if let response = response as? HTTPURLResponse {
                 if response.statusCode < 200 || response.statusCode >= 300 {
                     DispatchQueue.main.async {
@@ -51,20 +63,11 @@ final class OAuth2Service {
                     return
                 }
             }
-            
-            if let data = data {
-                
-                do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let responseBody = try decoder.decode(OAuthTokenResponseBody.self, from: data)
-                    DispatchQueue.main.async {
-                        print(responseBody.accessToken)
-                        completion(.success(responseBody.accessToken))
-                    }
-                } catch {
-                    fatalError("Decode error - \(error)")
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(NetworkError.urlSessionError(error)))
                 }
+                return
             }
         }
         task.resume()

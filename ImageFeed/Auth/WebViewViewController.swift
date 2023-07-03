@@ -10,17 +10,21 @@ protocol WebViewViewControllerDelegate: AnyObject {
     func webViewViewControllerDidCancel(_ vc: WebViewViewController)
 }
 
-fileprivate let UnsplashAuthorizeURLString = "https://unsplash.com/oauth/authorize"
-
-class WebViewViewController: UIViewController {
-    @IBOutlet weak var webView: WKWebView!
+final class WebViewViewController: UIViewController {
+    @IBOutlet weak private var webView: WKWebView!
     @IBOutlet private var progressView: UIProgressView!
     weak var delegate: WebViewViewControllerDelegate?
+    
+    private enum NetworkError: Error {
+        case urlComponentsError
+        case urlRequestError
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         webView.navigationDelegate = self
-        addRequest()
+        do { try addRequest() }
+        catch { preconditionFailure("Unable to construct Request") }
         updateProgress()
     }
     
@@ -49,22 +53,21 @@ class WebViewViewController: UIViewController {
         progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
     }
     
-    private func addRequest() {
-        guard var urlComponents = URLComponents(string: UnsplashAuthorizeURLString) else {
-            fatalError("Failed urlComponents \(UnsplashAuthorizeURLString)")
+    private func addRequest() throws {
+        guard var urlComponents = URLComponents(string: AuthConstants.unsplashAuthorizeURLString) else {
+            throw NetworkError.urlComponentsError
         }
         urlComponents.queryItems = [
-            URLQueryItem(name: "client_id", value: AccessKey),
-            URLQueryItem(name: "redirect_uri", value: RedirectURI),
+            URLQueryItem(name: "client_id", value: AuthConstants.accessKey),
+            URLQueryItem(name: "redirect_uri", value: AuthConstants.redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "scope", value: AccessScope)
+            URLQueryItem(name: "scope", value: AuthConstants.accessScope)
         ]
-        if let url = urlComponents.url {
-            let request = URLRequest(url: url)
-            webView.load(request)
-        } else {
-            fatalError("Failed to make URL from \(urlComponents)")
+        guard let url = urlComponents.url else {
+            throw NetworkError.urlRequestError
         }
+        let request = URLRequest(url: url)
+        webView.load(request)
     }
     
     @IBAction private func didTapBackButton(_ sender: Any?) {
