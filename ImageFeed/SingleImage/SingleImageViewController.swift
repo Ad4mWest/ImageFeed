@@ -1,4 +1,3 @@
-
 //  SingleImageViewController.swift
 //  ImageFeed
 //  Created by Adam West on 10.06.23.
