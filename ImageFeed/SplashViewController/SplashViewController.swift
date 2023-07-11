@@ -3,6 +3,7 @@
 //  Created by Adam West on 30.06.23.
 
 import UIKit
+import ProgressHUD
 
 final class SplashViewController: UIViewController {
 
@@ -37,6 +38,7 @@ final class SplashViewController: UIViewController {
             .instantiateViewController(withIdentifier: "TabBarViewController")
         window.rootViewController = tabBarController
     }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == showAuthenticationScreenSegueIdentifier {
             guard
@@ -53,10 +55,8 @@ final class SplashViewController: UIViewController {
 
 extension SplashViewController: AuthViewControllerDelegate {
     func authViewController(_ vc: AuthViewController, didAuthenticateWithCode code: String) {
-        dismiss(animated: true) { [weak self] in
-            guard let self = self else { return }
-            self.fetchOAuthToken(code)
-        }
+        ProgressHUD.show()
+        self.fetchOAuthToken(code)
     }
 
     private func fetchOAuthToken(_ code: String) {
@@ -66,8 +66,10 @@ extension SplashViewController: AuthViewControllerDelegate {
             case .success(let token):
                 OAuth2TokenStorage.shared.token = token
                 self.switchToTabBarController()
+                ProgressHUD.dismiss()
             case .failure(let error):
-                print(error)
+                ProgressHUD.dismiss()
+                assertionFailure("Failure of Token \(error)")
             }
         }
     }
